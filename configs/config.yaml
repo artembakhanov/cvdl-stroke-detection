@@ -4,8 +4,8 @@
 defaults:
   - _self_
   - trainer: default.yaml
-  - model: mnist_model.yaml
-  - datamodule: mnist_datamodule.yaml
+  - model: brain_model.yaml
+  - datamodule: brain_datamodule.yaml
   - callbacks: default.yaml
   - logger: null # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
@@ -46,3 +46,5 @@ seed: null
 # name of the run is accessed by loggers
 # should be used along with experiment mode
 name: null
+
+image_size: 64

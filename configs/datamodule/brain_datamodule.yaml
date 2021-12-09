@@ -1,0 +1,5 @@
+_target_: src.datamodules.brain_datamodule.BrainDataModule
+data_dir: ${data_dir}
+batch_size: 16
+num_workers: 0
+pin_memory: False

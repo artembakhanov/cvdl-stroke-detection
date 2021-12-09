@@ -1,12 +1,16 @@
 import logging
 import warnings
+from math import floor
 from typing import List, Sequence
 
 import pytorch_lightning as pl
 import rich.syntax
 import rich.tree
+import torch
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning.utilities import rank_zero_only
+import logging
+import tqdm
 
 
 def get_logger(name=__name__) -> logging.Logger:
@@ -17,15 +21,29 @@ def get_logger(name=__name__) -> logging.Logger:
     # this ensures all logging levels get marked with the rank zero decorator
     # otherwise logs would get multiplied for each GPU process in multi-GPU setup
     for level in (
-        "debug",
-        "info",
-        "warning",
-        "error",
-        "exception",
-        "fatal",
-        "critical",
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "exception",
+            "fatal",
+            "critical",
     ):
         setattr(logger, level, rank_zero_only(getattr(logger, level)))
+
+        class TqdmLoggingHandler(logging.Handler):
+            def __init__(self, level=logging.NOTSET):
+                super().__init__(level)
+
+            def emit(self, record):
+                try:
+                    msg = self.format(record)
+                    tqdm.tqdm.write(msg)
+                    self.flush()
+                except Exception:
+                    self.handleError(record)
+
+        # logger.addHandler(TqdmLoggingHandler())
 
     return logger
 
@@ -72,18 +90,18 @@ def extras(config: DictConfig) -> None:
 
 @rank_zero_only
 def print_config(
-    config: DictConfig,
-    fields: Sequence[str] = (
-        "trainer",
-        "model",
-        "datamodule",
-        "callbacks",
-        "logger",
-        "test_after_training",
-        "seed",
-        "name",
-    ),
-    resolve: bool = True,
+        config: DictConfig,
+        fields: Sequence[str] = (
+                "trainer",
+                "model",
+                "datamodule",
+                "callbacks",
+                "logger",
+                "test_after_training",
+                "seed",
+                "name",
+        ),
+        resolve: bool = True,
 ) -> None:
     """Prints content of DictConfig using Rich library and its tree structure.
 
@@ -115,12 +133,12 @@ def print_config(
 
 @rank_zero_only
 def log_hyperparameters(
-    config: DictConfig,
-    model: pl.LightningModule,
-    datamodule: pl.LightningDataModule,
-    trainer: pl.Trainer,
-    callbacks: List[pl.Callback],
-    logger: List[pl.loggers.LightningLoggerBase],
+        config: DictConfig,
+        model: pl.LightningModule,
+        datamodule: pl.LightningDataModule,
+        trainer: pl.Trainer,
+        callbacks: List[pl.Callback],
+        logger: List[pl.loggers.LightningLoggerBase],
 ) -> None:
     """This method controls which parameters from Hydra config are saved by Lightning loggers.
 
@@ -154,12 +172,12 @@ def log_hyperparameters(
 
 
 def finish(
-    config: DictConfig,
-    model: pl.LightningModule,
-    datamodule: pl.LightningDataModule,
-    trainer: pl.Trainer,
-    callbacks: List[pl.Callback],
-    logger: List[pl.loggers.LightningLoggerBase],
+        config: DictConfig,
+        model: pl.LightningModule,
+        datamodule: pl.LightningDataModule,
+        trainer: pl.Trainer,
+        callbacks: List[pl.Callback],
+        logger: List[pl.loggers.LightningLoggerBase],
 ) -> None:
     """Makes sure everything closed properly."""
 
@@ -169,3 +187,25 @@ def finish(
             import wandb
 
             wandb.finish()
+
+
+def batch_to_tensor(batch: list, included_y=True):
+    if included_y:
+        (sequences, categories) = zip(*batch)
+        stack = [torch.stack(seq) for seq in sequences]
+        new_sequences = torch.stack(stack, 1).transpose(1, 0)
+        return new_sequences, torch.tensor(categories)
+    sequences = zip(*batch)
+    stack = [torch.stack(seq) for seq in sequences]
+    new_sequences = torch.stack(stack, 1).transpose(1, 0)
+    return new_sequences
+
+
+def calc_embedding_size_recursive(conv_layers, input_size):
+    if not len(conv_layers):
+        return input_size
+    conv_layer = conv_layers[0]
+    res = floor(
+        (input_size[0] + 2 * conv_layer.padding[0] - conv_layer.dilation[0] * (conv_layer.kernel_size[0] - 1) - 1) /
+        conv_layer.stride[0] + 1)
+    return calc_embedding_size_recursive(conv_layers[1:], (res, res))

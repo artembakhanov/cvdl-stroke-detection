@@ -26,19 +26,19 @@ trainer:
   gpus: 0
   min_epochs: 1
   max_epochs: 10
-  gradient_clip_val: 0.5
-  accumulate_grad_batches: 2
+  gradient_clip_val: 0.0
+  accumulate_grad_batches: 1
   weights_summary: "full"
   num_sanity_val_steps: 0
 
 model:
   _target_: src.models.brain_model.BrainModel
   input_size: 64
-  sequence_size: 7
+  sequence_size: 15
   hidden_dim: 64
   n_lstm_layers: 3
   lr: 0.001
-  weight_decay: 0.0000
+  weight_decay: 0.01
 
 datamodule:
   _target_: src.datamodules.atlas_datamodule.AtlasDataModule
@@ -46,7 +46,7 @@ datamodule:
   batch_size: 16
   num_workers: 0
   pin_memory: False
-  sequence_size: 7
+  sequence_size: 15
 
 callbacks:
   model_checkpoint:

@@ -100,7 +100,7 @@ class BrainModel(LightningModule):
     #         metric.reset()
 
     def configure_optimizers(self):
-        return torch.optim.Adam(
+        return torch.optim.AdamW(
             params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
         )
 

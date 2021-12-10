@@ -15,8 +15,16 @@ log = utils.get_logger(__name__)
 
 
 class AtlasDataset(BaseDataset):
-    file_name = "Brain_Data_reordered2.zip"
-    file_id = "10lbK8GkXVXVhW-tUJ55IVLpbVs4fJlDY"
+    file_name = "atlas.zip"
+    file_ids = {10: "1WnNGaCaZGR8CV-LBM3r-yuDhtJ9DQ664",
+                7: "1nJLjvpzOk6ZPKP3vC8a9UWa6Iu_wanEM",
+                5: "1nm3078vMwI7CzwfdWxxV1lfrKA4KzwQV"}
+
+    folder_names = {
+        10: "ATLAS_REFORMED_10",
+        7: "ATLAS_REFORMED_TRIPLED_7",
+        5: "ATLAS_REFORMED_TIMES4_5"
+    }
     classes = {'no_stroke': 0, 'stroke': 1}
 
     def __init__(self,
@@ -30,7 +38,9 @@ class AtlasDataset(BaseDataset):
                  rotate: bool = False,
                  rot_seq_prob: float = 0.4,
                  test: bool = False,
-                 sequence_size: int = 15):
+                 sequence_size: int = 10):
+        self.sequence_size = sequence_size
+
         super(AtlasDataset, self).__init__(root, transform, target_transform, download, orphan, image_size,
                                            debug)
 
@@ -39,7 +49,6 @@ class AtlasDataset(BaseDataset):
         self.rotate = rotate
         self.rot_seq_prob = rot_seq_prob
         self.test = test
-        self.sequence_size = sequence_size
 
         self.images_sequences = {}
         self.idx_to_seq = {}
@@ -55,10 +64,10 @@ class AtlasDataset(BaseDataset):
     def __getitem__(self, idx):
         seq = []
         for i in range(1, self.sequence_size + 1):
-            seq.append(cv2.imread(self.samples[idx] / f"{i}.png"))
+            seq.append(cv2.imread(str(self.samples[idx] / f"{i}.png"), 0))
 
         seq = list(map(
-            lambda img: self.transform(img)["image"] if self.transform else img,
+            lambda img: self.transform(image=img)["image"] if self.transform else img,
             seq
         ))
 
@@ -68,7 +77,7 @@ class AtlasDataset(BaseDataset):
         return len(self.samples)
 
     def _get_samples(self):
-        root = pathlib.Path(self.root) / 'test' if self.test else 'train'
+        root = pathlib.Path(self.root) / ('test' if self.test else 'train')
 
         for cls in self.classes:
             seqs = [f for f in (root / cls).iterdir() if f.is_dir()]
@@ -85,15 +94,16 @@ class AtlasDataset(BaseDataset):
         # download files
         try:
             log.info("Downloading {}...".format(self.file_name))
-            download_file_from_google_drive(self.file_id, self._raw_folder, filename=self.file_name)
+            download_file_from_google_drive(self.file_ids[self.sequence_size], self._raw_folder,
+                                            filename=self.file_name)
             log.info("Extracting {}...".format(self.file_name))
             extract_archive(os.path.join(self._raw_folder, self.file_name), self.root)
 
-            files = glob.glob(f"{self.root}/s0me_name/*")
+            files = glob.glob(f"{self.root}/{self.folder_names[self.sequence_size]}/*")
             for f in files:
                 shutil.move(f, self.root)
 
-            shutil.rmtree(f"{self.root}/s0me_name/")
+            shutil.rmtree(f"{self.root}/{self.folder_names[self.sequence_size]}/")
             self._create_meta()
         except URLError as error:
             log.error(
@@ -101,3 +111,7 @@ class AtlasDataset(BaseDataset):
             )
         finally:
             pass
+
+    @classmethod
+    def root_folder(cls, data_dir, sequence_size=10, **kwargs):
+        return os.path.join(super(AtlasDataset, cls).root_folder(data_dir), f"seq{sequence_size}")

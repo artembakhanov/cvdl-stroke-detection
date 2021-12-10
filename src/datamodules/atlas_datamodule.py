@@ -20,7 +20,7 @@ class AtlasDataModule(LightningDataModule):
             pin_memory: bool = False,
             rotate: Dict[str, bool] = {"train": False, "test": False},
             rot_seq_prob: Dict[str, float] = {"train": 0.4, "test": 0.4},
-            sequence_size: Dict[str, int] = {"train": 15, "test": 15}
+            sequence_size: int = 10
     ):
         super().__init__()
         self.save_hyperparameters(logger=False)
@@ -53,26 +53,30 @@ class AtlasDataModule(LightningDataModule):
 
     def prepare_data(self):
         """Download data if needed. This method is called only from a single GPU."""
-        AtlasDataset(AtlasDataset.root_folder(self.hparams.data_dir), download=True, orphan=True)
+        AtlasDataset(AtlasDataset.root_folder(self.hparams.data_dir, sequence_size=self.hparams.sequence_size),
+                     download=True,
+                     orphan=True)
 
     def setup(self, stage: Optional[str] = None):
         if not self.data_train and not self.data_test:
-            self.data_train = AtlasDataset(AtlasDataset.root_folder(self.hparams.data_dir),
-                                           test=False,
-                                           transform=self.transform,
-                                           image_size=self.hparams["image_size"],
-                                           rotate=self.hparams["rotate"]["train"],
-                                           sequence_size=self.hparams["sequence_size"]["train"],
-                                           rot_seq_prob=self.hparams["rot_seq_prob"]["train"],
-                                           )
-            self.data_test = AtlasDataset(AtlasDataset.root_folder(self.hparams.data_dir),
-                                          test=True,
-                                          transform=self.test_transform,
-                                          image_size=self.hparams["image_size"],
-                                          rotate=self.hparams["rotate"]["test"],
-                                          sequence_size=self.hparams["sequence_size"]["test"],
-                                          rot_seq_prob=self.hparams["rot_seq_prob"]["test"],
-                                          )
+            self.data_train = AtlasDataset(
+                AtlasDataset.root_folder(self.hparams.data_dir, self.hparams.sequence_size),
+                test=False,
+                transform=self.transform,
+                image_size=self.hparams["image_size"],
+                rotate=self.hparams["rotate"]["train"],
+                sequence_size=self.hparams["sequence_size"],
+                rot_seq_prob=self.hparams["rot_seq_prob"]["train"],
+            )
+            self.data_test = AtlasDataset(
+                AtlasDataset.root_folder(self.hparams.data_dir, self.hparams.sequence_size),
+                test=True,
+                transform=self.test_transform,
+                image_size=self.hparams["image_size"],
+                rotate=self.hparams["rotate"]["test"],
+                sequence_size=self.hparams["sequence_size"],
+                rot_seq_prob=self.hparams["rot_seq_prob"]["test"],
+            )
 
     def train_dataloader(self):
         return DataLoader(
@@ -95,3 +99,6 @@ class AtlasDataModule(LightningDataModule):
             collate_fn=batch_to_tensor,
             shuffle=False,
         )
+
+    def test_dataloader(self):
+        return self.val_dataloader()

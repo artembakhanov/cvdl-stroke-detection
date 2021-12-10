@@ -52,5 +52,5 @@ class BaseDataset(VisionDataset):
                                            self.meta_file))
 
     @classmethod
-    def root_folder(cls, data_dir):
+    def root_folder(cls, data_dir, **kwargs):
         return os.path.join(data_dir, cls.__name__)

@@ -88,7 +88,7 @@ class BrainDataModule(LightningDataModule):
             shuffle=True,
         )
 
-    def test_dataloader(self):
+    def val_dataloader(self):
         return DataLoader(
             dataset=self.data_test,
             batch_size=self.hparams.batch_size,

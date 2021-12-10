@@ -36,7 +36,7 @@ class BrainModel(LightningModule):
         self.train_f1 = F1()
         self.test_f1 = F1()
 
-        self.val_acc_best = MaxMetric()
+        self.test_acc_best = MaxMetric()
         self.train_metrics = [self.train_acc, self.train_recall, self.train_precision, self.train_f1]
         self.test_metrics = [self.test_acc, self.test_recall, self.test_precision, self.test_f1]
 
@@ -90,9 +90,9 @@ class BrainModel(LightningModule):
         pass
 
     def validation_epoch_end(self, outputs: List[Any]):
-        acc = self.val_acc.compute()  # get val accuracy from current epoch
-        self.val_acc_best.update(acc)
-        self.log("test/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
+        acc = self.test_acc.compute()  # get val accuracy from current epoch
+        self.test_acc_best.update(acc)
+        self.log("test/acc_best", self.test_acc_best.compute(), on_epoch=True, prog_bar=True)
 
     def on_epoch_end(self):
         # reset metrics at the end of every epoch!

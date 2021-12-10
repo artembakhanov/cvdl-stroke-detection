@@ -11,7 +11,7 @@ from typing import Optional
 class AtlasParser:
     def __init__(self,
                  brain_path: str,
-                 masks_pathsmasks_paths: list[str],
+                 masks_paths: list[str],
                  sequence_len: int,
                  print_info: bool = False,
                  save_to: Optional[dict[str, str]] = None):

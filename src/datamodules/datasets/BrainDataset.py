@@ -29,10 +29,10 @@ class BrainDataset(BaseDataset):
                  target_transform: Optional[Callable] = None,
                  download: bool = False,
                  orphan: bool = False,
-                 image_size: int = 128,
+                 image_size: int = 64,
                  debug: bool = False,
                  dynamic_transform: Optional[Callable] = None,
-                 rotate: bool = True,
+                 rotate: bool = False,
                  rot_seq_prob: float = 0.4,
                  test: bool = False,
                  sequence_size: int = 15
@@ -48,7 +48,6 @@ class BrainDataset(BaseDataset):
 
         self.images_sequences = {}
         self.idx_to_img_num = {}
-        self.min_seq_size = sequence_size // 2
         self.rot_seq_prob = rot_seq_prob
         self.distributions = []
         self.rotate = rotate
@@ -62,7 +61,7 @@ class BrainDataset(BaseDataset):
                 self.idx_to_img_num[len(self.idx_to_img_num)] = key
                 for record in sequence:
                     img = cv2.imread(f'{new_dir}/{record["filename"]}', 0)
-                    if key in self.images_sequences.keys():
+                    if key in self.images_sequences:
                         self.images_sequences[key].append({
                             'image': static_transform(image=img)['image'] if static_transform else img,
                             'order': record['order'],
@@ -75,14 +74,12 @@ class BrainDataset(BaseDataset):
 
     def _sample_from_sequence(self, sequence, max_step=1):
         # max_step == 2 => = average max step: can be: [1, 2, 3, 4], can be [1, 2, 5, 6] from (1, .., 8)
-        if len(sequence) < self.min_seq_size:
-            return None
         if len(sequence) == self.sequence_size:
             return [sequence]
         original_indices = list(map(lambda rec: int(rec['order']), sequence))
         if len(sequence) < self.sequence_size:
             sampled_sequences = []
-            for i in range(self.sequence_size // max_step):
+            for _ in range(self.sequence_size // max_step):
                 # repeat random ones
                 indices_to_repeat = sorted(random.choices(original_indices, k=self.sequence_size))
                 new_sequence = []
@@ -133,8 +130,7 @@ class BrainDataset(BaseDataset):
         short_sequences = []
         for key, seq in sequences.items():
             sampled_sequences = self._sample_from_sequence(seq)
-            if sampled_sequences:
-                short_sequences.append(sampled_sequences)
+            short_sequences.append(sampled_sequences)
         # flatten
         short_sequences = [seq for sampled_seqs in short_sequences for seq in sampled_seqs]
         return short_sequences

@@ -54,6 +54,7 @@ class AtlasDataModule(LightningDataModule):
     def prepare_data(self):
         """Download data if needed. This method is called only from a single GPU."""
         AtlasDataset(AtlasDataset.root_folder(self.hparams.data_dir, sequence_size=self.hparams.sequence_size),
+                     sequence_size=self.hparams.sequence_size,
                      download=True,
                      orphan=True)
 

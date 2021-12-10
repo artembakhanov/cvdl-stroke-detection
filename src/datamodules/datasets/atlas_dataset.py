@@ -16,11 +16,13 @@ log = utils.get_logger(__name__)
 
 class AtlasDataset(BaseDataset):
     file_name = "atlas.zip"
-    file_ids = {10: "1WnNGaCaZGR8CV-LBM3r-yuDhtJ9DQ664",
+    file_ids = {15: "1fUMga7vJKnNYQdQYS6uH0IhJpP01uaL9",
+                10: "1WnNGaCaZGR8CV-LBM3r-yuDhtJ9DQ664",
                 7: "1nJLjvpzOk6ZPKP3vC8a9UWa6Iu_wanEM",
                 5: "1nm3078vMwI7CzwfdWxxV1lfrKA4KzwQV"}
 
     folder_names = {
+        15: "ATLAS_REFORMED_DOUBLED_15",
         10: "ATLAS_REFORMED_10",
         7: "ATLAS_REFORMED_TRIPLED_7",
         5: "ATLAS_REFORMED_TIMES4_5"

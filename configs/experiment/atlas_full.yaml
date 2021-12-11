@@ -41,11 +41,12 @@ model:
   weight_decay: 0.01
 
 datamodule:
-  _target_: src.datamodules.brain_datamodule.BrainDataModule
+  _target_: src.datamodules.atlas_datamodule.AtlasDataModule
   data_dir: ${data_dir}
   batch_size: 16
   num_workers: 0
   pin_memory: False
+  sequence_size: 15
 
 callbacks:
   model_checkpoint:

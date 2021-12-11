@@ -3,7 +3,7 @@ from typing import Any, List
 import torch
 from pytorch_lightning import LightningModule
 from torch import nn
-from torchmetrics import Accuracy, Precision, Recall, F1, MaxMetric
+from torchmetrics import Accuracy, Precision, Recall, F1, MaxMetric, AveragePrecision
 
 from src.models.modules.brain_net import BrainNet
 
@@ -24,17 +24,17 @@ class BrainModel(LightningModule):
         # loss function
         self.criterion = nn.BCEWithLogitsLoss()
 
-        self.train_acc = Accuracy()
-        self.test_acc = Accuracy()
+        self.train_acc = Accuracy(num_classes=2)
+        self.test_acc = Accuracy(num_classes=2)
 
-        self.train_precision = Precision()
-        self.test_precision = Precision()
+        self.train_precision = Precision(num_classes=2, average='macro')
+        self.test_precision = Precision(num_classes=2, average='macro')
 
-        self.train_recall = Recall()
-        self.test_recall = Recall()
+        self.train_recall = Recall(num_classes=2, average='macro')
+        self.test_recall = Recall(num_classes=2, average='macro')
 
-        self.train_f1 = F1()
-        self.test_f1 = F1()
+        self.train_f1 = F1(num_classes=2, average='macro')
+        self.test_f1 = F1(num_classes=2, average='macro')
 
         self.test_acc_best = MaxMetric()
         self.train_metrics = [self.train_acc, self.train_recall, self.train_precision, self.train_f1]
@@ -62,11 +62,11 @@ class BrainModel(LightningModule):
         precision = self.train_precision(preds, targets)
         f1 = self.train_f1(preds, targets)
 
-        self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("train/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("train/recall", recall, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("train/precision", precision, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("train/f1", f1, on_step=False, on_epoch=True, prog_bar=False)
+        self.log("train/loss", loss, on_epoch=True, prog_bar=False)
+        self.log("train/acc", acc, on_epoch=True, prog_bar=True)
+        self.log("train/recall", recall, on_epoch=True, prog_bar=False)
+        self.log("train/precision", precision, on_epoch=True, prog_bar=False)
+        self.log("train/f1", f1, on_epoch=True, prog_bar=False)
 
         return {"loss": loss, "preds": preds, "labels": targets}
 
@@ -78,28 +78,31 @@ class BrainModel(LightningModule):
         recall = self.test_recall(preds, targets)
         precision = self.test_precision(preds, targets)
         f1 = self.test_f1(preds, targets)
-        self.log("test/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("test/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("test/recall", recall, on_step=False, on_epoch=True, prog_bar=True)
-        self.log("test/precision", precision, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("test/f1", f1, on_step=False, on_epoch=True, prog_bar=False)
+        self.log("test/loss", loss, on_epoch=True, prog_bar=False)
+        self.log("test/acc", acc, on_epoch=True, prog_bar=True)
+        self.log("test/recall", recall, on_epoch=True, prog_bar=True)
+        self.log("test/precision", precision, on_epoch=True, prog_bar=False)
+        self.log("test/f1", f1, on_epoch=True, prog_bar=False)
 
-        return {"loss": loss, "preds": preds, "targets": targets, "test/acc": acc}
+        return {"loss": loss, "preds": preds, "targets": targets}
 
-    def training_epoch_end(self, outputs: List[Any]):
-        pass
+    # def training_epoch_end(self, outputs: List[Any]):
+    #     pass
 
-    def validation_epoch_end(self, outputs: List[Any]):
-        acc = self.test_acc.compute()  # get val accuracy from current epoch
-        self.test_acc_best.update(acc)
-        self.log("test/acc_best", self.test_acc_best.compute(), on_epoch=True, prog_bar=True)
+    # def validation_epoch_end(self, outputs: List[Any]):
+    #     acc = self.test_acc.compute()  # get val accuracy from current epoch
+    #     self.test_acc_best.update(acc)
+    #     self.log("test/acc_best", self.test_acc_best.compute(), on_epoch=True, prog_bar=True)
 
-    def on_epoch_end(self):
-        # reset metrics at the end of every epoch!
-        for metric in self.train_metrics + self.test_metrics:
-            metric.reset()
+    # def on_epoch_end(self):
+    #     # reset metrics at the end of every epoch!
+    #     for metric in self.train_metrics + self.test_metrics:
+    #         metric.reset()
 
     def configure_optimizers(self):
-        return torch.optim.Adam(
+        return torch.optim.AdamW(
             params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
         )
+
+    def test_step(self, batch: Any, batch_idx: int):
+        return self.validation_step(batch, batch_idx)

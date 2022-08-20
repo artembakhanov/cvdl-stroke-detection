@@ -7,3 +7,5 @@
 <a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning 1.5+-792ee5?style=for-the-badge&logo=pytorchlightning&logoColor=white"></a>
 <a href="https://hydra.cc/"><img alt="Config: hydra" src="https://img.shields.io/badge/config-hydra 1.1-89b8cd?style=for-the-badge&labelColor=gray"></a>
 </div>
+
+For more information, details, and results, refer to [project_report.pdf](https://github.com/artembakhanov/cvdl-stroke-detection/blob/main/project_report.pdf).
